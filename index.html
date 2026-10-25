@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ALIAS COFFE - Pesan Antar Instansi</title>
+    <!-- Tailwind CSS untuk Desain Modern -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brandDark: '#16202c',
+                        brandCard: '#1e2c3a',
+                        brandGold: '#d99b26',
+                        brandGoldHover: '#c48920',
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome untuk Ikon -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-brandDark text-gray-100 min-h-screen flex flex-col font-sans relative overflow-x-hidden">
+
+    <!-- CANVAS INTERAKTIF DIBERIKAN SEBAGAI BACKGROUND -->
+    <canvas id="bgCanvas" class="fixed inset-0 pointer-events-auto z-0"></canvas>
+
+    <!-- WRAPPER UTAMA (OVERLAY TAMPILAN) -->
+    <div class="relative z-10 flex flex-col min-h-screen pointer-events-none">
+
+        <!-- HEADER / NAVBAR -->
+        <header class="bg-brandCard/90 backdrop-blur-md border-b border-gray-800 sticky top-0 z-40 px-4 py-3 flex justify-between items-center shadow-lg pointer-events-auto">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-full bg-brandGold flex items-center justify-center text-brandDark font-bold text-xl shadow">
+                    <i class="fa-solid fa-mug-hot"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-brandGold tracking-wide">ALIAS COFFE</h1>
+                    <p class="text-xs text-gray-400">Delivery Polres & Dinas</p>
+                </div>
+            </div>
+            <button onclick="openAdminModal()" class="text-gray-400 hover:text-brandGold p-2 rounded-full transition" title="Panel Admin">
+                <i class="fa-solid fa-gear text-xl"></i>
+            </button>
+        </header>
+
+        <!-- KONTEN UTAMA -->
+        <main class="flex-1 max-w-xl w-full mx-auto p-4 pb-32 pointer-events-auto">
+
+            <!-- Banner Info Shift -->
+            <div class="bg-brandCard/85 backdrop-blur-sm border border-brandGold/30 rounded-xl p-3 mb-6 shadow-md flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div class="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                    <span class="text-xs text-gray-300 font-medium">Barista Bertugas Hari Ini:</span>
+                </div>
+                <div id="activeShiftDisplay" class="text-xs font-bold text-brandGold">
+                    Memuat data shift...
+                </div>
+            </div>
+
+            <!-- DAFTAR MENU -->
+            <div class="space-y-6">
+                
+                <!-- KATEGORI: COFFEE -->
+                <div>
+                    <h2 class="text-brandGold font-bold text-base mb-3 flex items-center border-b border-gray-800 pb-1">
+                        <i class="fa-solid fa-coffee mr-2"></i> Menu Coffee
+                    </h2>
+                    <div id="menuCoffee" class="space-y-2">
+                        <!-- Dinamis via JS -->
+                    </div>
+                </div>
+
+                <!-- KATEGORI: NON-COFFEE -->
+                <div>
+                    <h2 class="text-brandGold font-bold text-base mb-3 flex items-center border-b border-gray-800 pb-1">
+                        <i class="fa-solid fa-glass-water mr-2"></i> Menu Non-Coffee
+                    </h2>
+                    <div id="menuNonCoffee" class="space-y-2">
+                        <!-- Dinamis via JS -->
+                    </div>
+                </div>
+
+                <!-- KATEGORI: ADDITIONAL -->
+                <div>
+                    <h2 class="text-brandGold font-bold text-base mb-3 flex items-center border-b border-gray-800 pb-1">
+                        <i class="fa-solid fa-plus-circle mr-2"></i> Additional / Extra
+                    </h2>
+                    <div id="menuAdditional" class="space-y-2">
+                        <!-- Dinamis via JS -->
+                    </div>
+                </div>
+
+            </div>
+        </main>
+
+        <!-- FLOATING CART & CHECKOUT BAR -->
+        <div id="cartBar" class="fixed bottom-0 left-0 right-0 bg-brandCard/95 backdrop-blur-md border-t border-gray-800 p-4 shadow-2xl z-30 transition-transform duration-300 pointer-events-auto translate-y-full">
+            <div class="max-w-xl mx-auto flex justify-between items-center">
+                <div>
+                    <p class="text-xs text-gray-400">Total Pesanan:</p>
+                    <p id="totalPrice" class="text-lg font-bold text-brandGold">Rp 0</p>
+                </div>
+                <button onclick="openCheckoutModal()" class="bg-brandGold hover:bg-brandGoldHover text-brandDark font-bold px-6 py-2.5 rounded-xl shadow-lg transition flex items-center space-x-2">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <span>Checkout (<span id="totalItems">0</span>)</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL CHECKOUT & FORM PENGANTARAN -->
+        <div id="checkoutModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-end sm:items-center justify-center p-0 sm:p-4 pointer-events-auto">
+            <div class="bg-brandCard w-full max-w-lg rounded-t-3xl sm:rounded-2xl p-6 border border-gray-800 max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-brandGold">Konfirmasi Pesanan Alias Coffee</h3>
+                    <button onclick="closeCheckoutModal()" class="text-gray-400 hover:text-white p-1">
+                        <i class="fa-solid fa-xmark text-xl"></i>
+                    </button>
+                </div>
+
+                <div id="cartSummaryList" class="space-y-2 mb-4 text-sm divide-y divide-gray-800 max-h-40 overflow-y-auto pr-1">
+                    <!-- List item terpilih -->
+                </div>
+
+                <div class="space-y-3 mb-6">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Nama Pemesan / Panggilan <span class="text-red-500">*</span></label>
+                        <input type="text" id="custName" placeholder="Contoh: Briptu Andi / Pak Budi" class="w-full bg-brandDark border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brandGold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Tempat Pengantaran (Kantor/Ruangan) <span class="text-red-500">*</span></label>
+                        <input type="text" id="custLocation" placeholder="Contoh: Polres - Ruang Satlantas / Dinas PU Lt. 2" class="w-full bg-brandDark border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brandGold">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Notes / Request Khusus (Opsional)</label>
+                        <textarea id="custNotes" rows="2" placeholder="Contoh: Less sugar, es dipisah, bungkus kresek terpisah" class="w-full bg-brandDark border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-brandGold"></textarea>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-gray-300 mb-1">Kirim Pesanan Ke Barista Shift:</label>
+                        <div class="grid grid-cols-2 gap-2" id="shiftSelectorRadio">
+                            <!-- Diisi otomatis via JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="sendToWhatsApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center space-x-2">
+                    <i class="fa-brands fa-whatsapp text-xl"></i>
+                    <span>Kirim Pesanan ke WhatsApp Barista</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL ADMIN PANEL -->
+        <div id="adminModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4 pointer-events-auto">
+            <div class="bg-brandCard w-full max-w-md rounded-2xl p-6 border border-gray-800">
+                
+                <!-- Login View -->
+                <div id="adminLoginView">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-brandGold">Login Panel Admin</h3>
+                        <button onclick="closeAdminModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    <p class="text-xs text-gray-400 mb-4">Masukkan PIN Admin untuk mengatur nomor shift pegawai.</p>
+                    <input type="password" id="adminPinInput" placeholder="Masukkan PIN (Default: 1234)" class="w-full bg-brandDark border border-gray-700 rounded-xl px-3 py-2 text-sm text-white mb-4 focus:outline-none focus:border-brandGold">
+                    <button onclick="verifyAdminPin()" class="w-full bg-brandGold text-brandDark font-bold py-2.5 rounded-xl">Masuk</button>
+                </div>
+
+                <!-- Edit Settings View -->
+                <div id="adminEditView" class="hidden">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-bold text-brandGold">Pengaturan Shift & Kontak</h3>
+                        <button onclick="closeAdminModal()" class="text-gray-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+                    </div>
+                    <div class="space-y-3 mb-6 max-h-[60vh] overflow-y-auto pr-1">
+                        <div class="p-3 bg-brandDark rounded-xl border border-gray-800">
+                            <p class="text-xs font-bold text-brandGold mb-2">Barista Shift 1</p>
+                            <input type="text" id="editStaff1Name" placeholder="Nama Pegawai 1" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white mb-2">
+                            <input type="text" id="editStaff1Phone" placeholder="Nomor WA (Awali 62...)" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        </div>
+                        <div class="p-3 bg-brandDark rounded-xl border border-gray-800">
+                            <p class="text-xs font-bold text-brandGold mb-2">Barista Shift 2</p>
+                            <input type="text" id="editStaff2Name" placeholder="Nama Pegawai 2" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white mb-2">
+                            <input type="text" id="editStaff2Phone" placeholder="Nomor WA (Awali 62...)" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        </div>
+                        <div class="p-3 bg-brandDark rounded-xl border border-gray-800">
+                            <p class="text-xs font-bold text-brandGold mb-2">Nomor Admin Utama (Owner)</p>
+                            <input type="text" id="editAdminPhone" placeholder="Nomor WA Admin (Awali 62...)" class="w-full bg-gray-900 border border-gray-700 rounded-lg px-2 py-1.5 text-xs text-white">
+                        </div>
+                    </div>
+                    <button onclick="saveAdminSettings()" class="w-full bg-brandGold hover:bg-brandGoldHover text-brandDark font-bold py-2.5 rounded-xl shadow transition">Simpan Perubahan Real-Time</button>
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+
+    <!-- EFEK BACKGROUND INTERAKSI PARTIKEL EMAS -->
+    <script>
+        const canvas = document.getElementById('bgCanvas');
+        const ctx = canvas.getContext('2d');
+
+        let particlesArray = [];
+        let mouse = { x: null, y: null, radius: 120 };
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            initParticles();
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        window.addEventListener('mousemove', (e) => {
+            mouse.x = e.x;
+            mouse.y = e.y;
+        });
+
+        window.addEventListener('touchmove', (e) => {
+            if (e.touches.length > 0) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        });
+
+        window.addEventListener('touchend', () => {
+            mouse.x = null;
+            mouse.y = null;
+        });
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.size = Math.random() * 3.5 + 1;
+                this.speedY = Math.random() * 0.8 + 0.2;
+                this.speedX = (Math.random() - 0.5) * 0.4;
+                this.opacity = Math.random() * 0.6 + 0.2;
+                this.color = '#d99b26';
+            }
+
+            update() {
+                this.y -= this.speedY;
+                this.x += this.speedX;
+
+                if (this.y < 0) {
+                    this.y = canvas.height + 10;
+                    this.x = Math.random() * canvas.width;
+                }
+
+                // Interaksi dengan sentuhan / mouse
+                if (mouse.x !== null && mouse.y !== null) {
+                    let dx = mouse.x - this.x;
+                    let dy = mouse.y - this.y;
+                    let distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < mouse.radius) {
+                        let force = (mouse.radius - distance) / mouse.radius;
+                        let directionX = (dx / distance) * force * 5;
+                        let directionY = (dy / distance) * force * 5;
+                        this.x -= directionX;
+                        this.y -= directionY;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.globalAlpha = this.opacity;
+                ctx.shadowBlur = 8;
+                ctx.shadowColor = '#d99b26';
+                ctx.fill();
+                ctx.globalAlpha = 1.0;
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function initParticles() {
+            particlesArray = [];
+            const particleCount = Math.min(Math.floor((canvas.width * canvas.height) / 12000), 70);
+            for (let i = 0; i < particleCount; i++) {
+                particlesArray.push(new Particle());
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (let i = 0; i < particlesArray.length; i++) {
+                particlesArray[i].update();
+                particlesArray[i].draw();
+            }
+            requestAnimationFrame(animate);
+        }
+
+        resizeCanvas();
+        animate();
+    </script>
+
+    <!-- FIREBASE & LOGIKA APLIKASI -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-app.js";
+        import { getDatabase, ref, set, onValue } from "https://www.gstatic.com/firebasejs/13.1.0/firebase-database.js";
+
+        // Konfigurasi Firebase Anda
+        const firebaseConfig = {
+            apiKey: "AIzaSyAfz_sMj6HY8Jn4TVU88oe1e7YGFIWt9Js",
+            authDomain: "alias-3de6e.firebaseapp.com",
+            projectId: "alias-3de6e",
+            storageBucket: "alias-3de6e.firebasestorage.app",
+            messagingSenderId: "475533517804",
+            appId: "1:475533517804:web:89c4255515603cfe8e96c9",
+            measurementId: "G-961E4CJM31"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+
+        // Data Menu Resmi Alias Coffee
+        const menuData = {
+            coffee: [
+                { name: "Es Kopi Alias 12", price: 18000 },
+                { name: "Es Kopi Alias", price: 15000 },
+                { name: "Americano", price: 12000 },
+                { name: "Americano Lemonade", price: 15000 },
+                { name: "Caramel Macchiato", price: 15000 },
+                { name: "Lotus Kopi", price: 23000 },
+                { name: "Regal Kopi", price: 18000 },
+                { name: "Pandan Kopi", price: 15000 },
+                { name: "Spanish Latte", price: 15000 },
+                { name: "Butterscotch Kopi", price: 18000 }
+            ],
+            nonCoffee: [
+                { name: "Coklat", price: 15000 },
+                { name: "Red Velvet", price: 15000 },
+                { name: "Green Tea", price: 15000 },
+                { name: "Blue Mojito", price: 15000 },
+                { name: "Mojito Purple", price: 15000 },
+                { name: "Strawberry Milkshake", price: 15000 },
+                { name: "Strawberry Cheese Cake", price: 20000 },
+                { name: "Regal Milk", price: 15000 },
+                { name: "Regal Caramel", price: 15000 },
+                { name: "Klepon Milky", price: 15000 },
+                { name: "Lotus Milk", price: 15000 }
+            ],
+            additional: [
+                { name: "Extra Shot Espresso", price: 3000 }
+            ]
+        };
+
+        let cart = {};
+        let currentSettings = {
+            staff1Name: "Barista 1",
+            staff1Phone: "6281234567890",
+            staff2Name: "Barista 2",
+            staff2Phone: "6289876543210",
+            adminPhone: "628111222333"
+        };
+
+        // Render Menu ke HTML
+        function renderMenus() {
+            const renderCategory = (items, containerId, categoryKey) => {
+                const container = document.getElementById(containerId);
+                container.innerHTML = items.map((item, idx) => `
+                    <div class="bg-brandCard/90 border border-gray-800 p-3 rounded-xl flex justify-between items-center shadow-sm">
+                        <div>
+                            <p class="font-semibold text-sm text-white">${item.name}</p>
+                            <p class="text-xs text-brandGold font-medium">Rp ${item.price.toLocaleString('id-ID')}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <button onclick="updateCart('${categoryKey}', ${idx}, -1)" class="w-8 h-8 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg flex items-center justify-center font-bold">-</button>
+                            <span id="qty-${categoryKey}-${idx}" class="text-sm font-bold w-6 text-center">0</span>
+                            <button onclick="updateCart('${categoryKey}', ${idx}, 1)" class="w-8 h-8 bg-brandGold hover:bg-brandGoldHover text-brandDark rounded-lg flex items-center justify-center font-bold">+</button>
+                        </div>
+                    </div>
+                `).join('');
+            };
+
+            renderCategory(menuData.coffee, 'menuCoffee', 'coffee');
+            renderCategory(menuData.nonCoffee, 'menuNonCoffee', 'nonCoffee');
+            renderCategory(menuData.additional, 'menuAdditional', 'additional');
+        }
+
+        window.updateCart = function(category, index, change) {
+            const key = `${category}-${index}`;
+            const item = menuData[category][index];
+            
+            if (!cart[key]) {
+                if (change > 0) {
+                    cart[key] = { name: item.name, price: item.price, qty: 1 };
+                }
+            } else {
+                cart[key].qty += change;
+                if (cart[key].qty <= 0) {
+                    delete cart[key];
+                }
+            }
+
+            const qtySpan = document.getElementById(`qty-${key}`);
+            if (qtySpan) {
+                qtySpan.innerText = cart[key] ? cart[key].qty : 0;
+            }
+
+            updateCartSummaryBar();
+        }
+
+        function updateCartSummaryBar() {
+            let totalItems = 0;
+            let totalPrice = 0;
+
+            for (let k in cart) {
+                totalItems += cart[k].qty;
+                totalPrice += cart[k].price * cart[k].qty;
+            }
+
+            document.getElementById('totalItems').innerText = totalItems;
+            document.getElementById('totalPrice').innerText = `Rp ${totalPrice.toLocaleString('id-ID')}`;
+
+            const cartBar = document.getElementById('cartBar');
+            if (totalItems > 0) {
+                cartBar.classList.remove('translate-y-full');
+            } else {
+                cartBar.classList.add('translate-y-full');
+            }
+        }
+
+        // Sinkronisasi Real-Time Firebase
+        const settingsRef = ref(db, 'alias_settings');
+        onValue(settingsRef, (snapshot) => {
+            const data = snapshot.val();
+            if (data) {
+                currentSettings = data;
+            } else {
+                set(settingsRef, currentSettings);
+            }
+            updateShiftDisplay();
+        });
+
+        function updateShiftDisplay() {
+            document.getElementById('activeShiftDisplay').innerText = `${currentSettings.staff1Name} & ${currentSettings.staff2Name}`;
+        }
+
+        window.openCheckoutModal = function() {
+            const listEl = document.getElementById('cartSummaryList');
+            let html = '';
+            for (let k in cart) {
+                html += `<div class="py-2 flex justify-between text-xs">
+                    <span>${cart[k].name} (x${cart[k].qty})</span>
+                    <span class="font-semibold text-brandGold">Rp ${(cart[k].price * cart[k].qty).toLocaleString('id-ID')}</span>
+                </div>`;
+            }
+            listEl.innerHTML = html;
+
+            const radioEl = document.getElementById('shiftSelectorRadio');
+            radioEl.innerHTML = `
+                <label class="border border-gray-700 bg-brandDark p-2.5 rounded-xl flex items-center space-x-2 cursor-pointer hover:border-brandGold">
+                    <input type="radio" name="targetStaff" value="1" checked class="text-brandGold focus:ring-brandGold">
+                    <div class="text-xs">
+                        <p class="font-bold text-white">${currentSettings.staff1Name}</p>
+                        <p class="text-[10px] text-gray-400">Shift 1</p>
+                    </div>
+                </label>
+                <label class="border border-gray-700 bg-brandDark p-2.5 rounded-xl flex items-center space-x-2 cursor-pointer hover:border-brandGold">
+                    <input type="radio" name="targetStaff" value="2" class="text-brandGold focus:ring-brandGold">
+                    <div class="text-xs">
+                        <p class="font-bold text-white">${currentSettings.staff2Name}</p>
+                        <p class="text-[10px] text-gray-400">Shift 2</p>
+                    </div>
+                </label>
+            `;
+
+            document.getElementById('checkoutModal').classList.remove('hidden');
+        }
+
+        window.closeCheckoutModal = function() {
+            document.getElementById('checkoutModal').classList.add('hidden');
+        }
+
+        window.sendToWhatsApp = function() {
+            const name = document.getElementById('custName').value.trim();
+            const location = document.getElementById('custLocation').value.trim();
+            const notes = document.getElementById('custNotes').value.trim();
+
+            if (!name || !location) {
+                alert('Mohon isi Nama Pemesan dan Tempat Pengantaran terlebih dahulu!');
+                return;
+            }
+
+            const selectedStaffRadio = document.querySelector('input[name="targetStaff"]:checked');
+            const targetPhone = selectedStaffRadio && selectedStaffRadio.value === '2' ? currentSettings.staff2Phone : currentSettings.staff1Phone;
+
+            let message = `*PESANAN BARU - ALIAS COFFEE*\n\n`;
+            message += `👤 *Nama:* ${name}\n`;
+            message += `📍 *Lokasi:* ${location}\n`;
+            if(notes) message += `📝 *Notes:* ${notes}\n`;
+            message += `--------------------\n`;
+            message += `*Detail Pesanan:*\n`;
+
+            let grandTotal = 0;
+            for (let k in cart) {
+                const subtotal = cart[k].price * cart[k].qty;
+                grandTotal += subtotal;
+                message += `- ${cart[k].name} x${cart[k].qty} (Rp ${subtotal.toLocaleString('id-ID')})\n`;
+            }
+
+            message += `--------------------\n`;
+            message += `💰 *TOTAL: Rp ${grandTotal.toLocaleString('id-ID')}*\n\n`;
+            message += `Mohon segera diproses ya, terima kasih! ☕`;
+
+            const encodedMessage = encodeURIComponent(message);
+            window.open(`https://wa.me/${targetPhone}?text=${encodedMessage}`, '_blank');
+        }
+
+        // Panel Admin
+        window.openAdminModal = function() {
+            document.getElementById('adminModal').classList.remove('hidden');
+            document.getElementById('adminLoginView').classList.remove('hidden');
+            document.getElementById('adminEditView').classList.add('hidden');
+            document.getElementById('adminPinInput').value = '';
+        }
+
+        window.closeAdminModal = function() {
+            document.getElementById('adminModal').classList.add('hidden');
+        }
+
+        window.verifyAdminPin = function() {
+            const pin = document.getElementById('adminPinInput').value;
+            if (pin === '1234') {
+                document.getElementById('adminLoginView').classList.add('hidden');
+                document.getElementById('adminEditView').classList.remove('hidden');
+
+                document.getElementById('editStaff1Name').value = currentSettings.staff1Name;
+                document.getElementById('editStaff1Phone').value = currentSettings.staff1Phone;
+                document.getElementById('editStaff2Name').value = currentSettings.staff2Name;
+                document.getElementById('editStaff2Phone').value = currentSettings.staff2Phone;
+                document.getElementById('editAdminPhone').value = currentSettings.adminPhone;
+            } else {
+                alert('PIN Salah! (Default: 1234)');
+            }
+        }
+
+        window.saveAdminSettings = function() {
+            const newSettings = {
+                staff1Name: document.getElementById('editStaff1Name').value.trim() || "Barista 1",
+                staff1Phone: document.getElementById('editStaff1Phone').value.trim() || "6281234567890",
+                staff2Name: document.getElementById('editStaff2Name').value.trim() || "Barista 2",
+                staff2Phone: document.getElementById('editStaff2Phone').value.trim() || "6289876543210",
+                adminPhone: document.getElementById('editAdminPhone').value.trim() || "628111222333"
+            };
+
+            set(settingsRef, newSettings).then(() => {
+                alert('Pengaturan shift & kontak berhasil diperbarui secara real-time!');
+                closeAdminModal();
+            }).catch((error) => {
+                alert('Gagal menyimpan ke Firebase: ' + error.message);
+            });
+        }
+
+        renderMenus();
+    </script>
+</body>
+</html>
